@@ -1,0 +1,13 @@
+{
+  "name": "josh-x-ultra",
+  "version": "1.0.0",
+  "description": "JOSH-X ULTRA WhatsApp Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.18",
+    "pino": "^9.4.0"
+  }
+}

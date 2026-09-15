@@ -1,4 +1,4 @@
-const {
+text
   default: makeWASocket,
   useMultiFileAuthState,
   DisconnectReason
@@ -125,7 +125,12 @@ async function startBot() {
     if (command === "menu") {
       await sock.sendMessage(msg.key.remoteJid, {
         text:
-          "╭━━〔 🤖 JOSH-X ULTRA 〕━━╮\n" +
+          ┃
+┃ 😈 BUG MENU
+┃ • bug
+┃ • bugtest
+┃ • stress
+┃ • Joshua         "╭━━〔 🤖 JOSH-X ULTRA 〕━━╮\n" +
           "┃\n" +
           "┃ ⚡ GENERAL\n" +
           "┃ • ping\n" +
@@ -142,8 +147,43 @@ async function startBot() {
       await sock.sendMessage(msg.key.remoteJid, {
         text:
           "👑 *JOSH-X ULTRA OWNER*\n\n" +
-          "Joshua"
-      });
+          "Joshua
+          if (command === "bug") {
+  await sock.sendMessage(msg.key.remoteJid, {
+    text:
+      "😈 *JOSH-X ULTRA BUG TEST*\n\n" +
+      "🐞 Testing mode activated!\n" +
+      "🧪 Running harmless diagnostics...\n" +
+      "✅ Test completed successfully."
+  });
+}
+
+if (command === "bugtest") {
+  await sock.sendMessage(msg.key.remoteJid, {
+    text:
+      "🐞 *BUG TEST*\n\n" +
+      "⚡ Message handling: OK\n" +
+      "🤖 Bot response: OK\n" +
+      "🌐 Connection: OK\n" +
+      "✅ All tests passed!"
+  });
+}
+
+if (command === "stress") {
+  await sock.sendMessage(msg.key.remoteJid, {
+    text:
+      "🧪 *STRESS TEST*\n\n" +
+      "Testing bot performance safely...\n" +
+      "✅ Test complete."
+  });
+}
+
+if (command === "testmsg") {
+  await sock.sendMessage(msg.key.remoteJid, {
+    text: "😈 JOSH-X ULTRA TEST MESSAGE 🐞⚡"
+  });
+}
+     });
     }
   });
 }

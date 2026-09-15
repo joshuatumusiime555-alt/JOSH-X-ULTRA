@@ -7,7 +7,8 @@ const {
 const P = require("pino");
 
 async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState("./auth");
+  const { state, saveCreds } =
+    await useMultiFileAuthState("./auth");
 
   const sock = makeWASocket({
     auth: state,
@@ -17,31 +18,56 @@ async function startBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
-    if (connection === "open") {
-      console.log("╔══════════════════════════╗");
-      console.log("║     JOSH-X ULTRA 🤖      ║");
-      console.log("║      BOT ONLINE ✅       ║");
-      console.log("╚══════════════════════════╝");
+  // WhatsApp pairing
+  if (!state.creds.registered) {
+    const phoneNumber = process.env.BOT_NUMBER;
+
+    if (!phoneNumber) {
+      console.log("❌ BOT_NUMBER is not set.");
+      return;
     }
 
-    if (connection === "close") {
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !==
-        DisconnectReason.loggedOut;
+    try {
+      const code = await sock.requestPairingCode(phoneNumber);
+      console.log("================================");
+      console.log("🔗 JOSH-X ULTRA PAIRING CODE");
+      console.log("👉", code);
+      console.log("================================");
+    } catch (error) {
+      console.log("❌ Could not generate pairing code.");
+      console.error(error);
+    }
+  }
 
-      console.log("Connection closed.");
+  sock.ev.on(
+    "connection.update",
+    ({ connection, lastDisconnect }) => {
+      if (connection === "open") {
+        console.log("================================");
+        console.log("🤖 JOSH-X ULTRA");
+        console.log("✅ BOT ONLINE");
+        console.log("================================");
+      }
 
-      if (shouldReconnect) {
-        startBot();
+      if (connection === "close") {
+        const shouldReconnect =
+          lastDisconnect?.error?.output?.statusCode !==
+          DisconnectReason.loggedOut;
+
+        console.log("⚠️ WhatsApp connection closed.");
+
+        if (shouldReconnect) {
+          console.log("🔄 Reconnecting...");
+          startBot();
+        }
       }
     }
-  });
+  );
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
 
-    if (!msg.message || msg.key.fromMe) return;
+    if (!msg?.message || msg.key.fromMe) return;
 
     const text =
       msg.message.conversation ||
@@ -69,25 +95,24 @@ async function startBot() {
     if (command === "menu") {
       await sock.sendMessage(msg.key.remoteJid, {
         text:
-          "╭━━━〔 🤖 JOSH-X ULTRA 〕━━━╮\n" +
+          "╭━━〔 🤖 JOSH-X ULTRA 〕━━╮\n" +
           "┃\n" +
-          "┃ 👋 Welcome!\n" +
-          "┃\n" +
-          "┃ ⚡ *GENERAL*\n" +
+          "┃ ⚡ GENERAL\n" +
           "┃ • ping\n" +
           "┃ • alive\n" +
           "┃ • menu\n" +
           "┃ • owner\n" +
           "┃\n" +
-          "┃ 🚀 More commands coming...\n" +
-          "┃\n" +
+          "┃ 🚀 More coming soon...\n" +
           "╰━━━━━━━━━━━━━━━━━━━━╯"
       });
     }
 
     if (command === "owner") {
       await sock.sendMessage(msg.key.remoteJid, {
-        text: "👑 *JOSH-X ULTRA OWNER*\n\nJoshua"
+        text:
+          "👑 *JOSH-X ULTRA OWNER*\n\n" +
+          "Joshua"
       });
     }
   });

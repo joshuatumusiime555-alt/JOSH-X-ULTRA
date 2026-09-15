@@ -5,6 +5,17 @@ const {
 } = require("@whiskeysockets/baileys");
 
 const P = require("pino");
+const http = require("http");
+
+// Keep Render Web Service alive
+const PORT = process.env.PORT || 10000;
+
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("JOSH-X ULTRA is running 🚀");
+}).listen(PORT, "0.0.0.0", () => {
+  console.log(`🌐 Server running on port ${PORT}`);
+});
 
 async function startBot() {
   const { state, saveCreds } =
@@ -18,30 +29,47 @@ async function startBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  // WhatsApp pairing
-  if (!state.creds.registered) {
-    const phoneNumber = process.env.BOT_NUMBER;
-
-    if (!phoneNumber) {
-      console.log("❌ BOT_NUMBER is not set.");
-      return;
-    }
-
-    try {
-      const code = await sock.requestPairingCode(phoneNumber);
-      console.log("================================");
-      console.log("🔗 JOSH-X ULTRA PAIRING CODE");
-      console.log("👉", code);
-      console.log("================================");
-    } catch (error) {
-      console.log("❌ Could not generate pairing code.");
-      console.error(error);
-    }
-  }
+  let pairingRequested = false;
 
   sock.ev.on(
     "connection.update",
-    ({ connection, lastDisconnect }) => {
+    async ({ connection, lastDisconnect, qr }) => {
+
+      // Request pairing ONLY after WhatsApp has initialized
+      if (
+        qr &&
+        !state.creds.registered &&
+        !pairingRequested
+      ) {
+        pairingRequested = true;
+
+        const phoneNumber = process.env.BOT_NUMBER;
+
+        if (!phoneNumber) {
+          console.log("❌ BOT_NUMBER is not set.");
+          return;
+        }
+
+        try {
+          console.log("⏳ Requesting WhatsApp pairing code...");
+
+          const code =
+            await sock.requestPairingCode(phoneNumber);
+
+          console.log("================================");
+          console.log("🔗 JOSH-X ULTRA PAIRING CODE");
+          console.log("👉", code);
+          console.log("================================");
+          console.log("📱 Enter this code in WhatsApp:");
+          console.log("Settings → Linked Devices → Link a Device");
+        } catch (error) {
+          console.log("❌ Could not generate pairing code.");
+          console.error(error);
+
+          pairingRequested = false;
+        }
+      }
+
       if (connection === "open") {
         console.log("================================");
         console.log("🤖 JOSH-X ULTRA");
@@ -58,7 +86,9 @@ async function startBot() {
 
         if (shouldReconnect) {
           console.log("🔄 Reconnecting...");
-          startBot();
+          setTimeout(startBot, 3000);
+        } else {
+          console.log("❌ WhatsApp logged out.");
         }
       }
     }

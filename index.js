@@ -1,4 +1,4 @@
-text
+const {
   default: makeWASocket,
   useMultiFileAuthState,
   DisconnectReason
@@ -7,7 +7,7 @@ text
 const P = require("pino");
 const http = require("http");
 
-// Keep Render Web Service alive
+// Render Web Service
 const PORT = process.env.PORT || 10000;
 
 http.createServer((req, res) => {
@@ -35,7 +35,7 @@ async function startBot() {
     "connection.update",
     async ({ connection, lastDisconnect, qr }) => {
 
-      // Request pairing ONLY after WhatsApp has initialized
+      // WhatsApp pairing
       if (
         qr &&
         !state.creds.registered &&
@@ -60,16 +60,14 @@ async function startBot() {
           console.log("🔗 JOSH-X ULTRA PAIRING CODE");
           console.log("👉", code);
           console.log("================================");
-          console.log("📱 Enter this code in WhatsApp:");
-          console.log("Settings → Linked Devices → Link a Device");
         } catch (error) {
           console.log("❌ Could not generate pairing code.");
           console.error(error);
-
           pairingRequested = false;
         }
       }
 
+      // Bot connected
       if (connection === "open") {
         console.log("================================");
         console.log("🤖 JOSH-X ULTRA");
@@ -77,6 +75,7 @@ async function startBot() {
         console.log("================================");
       }
 
+      // Connection closed
       if (connection === "close") {
         const shouldReconnect =
           lastDisconnect?.error?.output?.statusCode !==
@@ -94,10 +93,13 @@ async function startBot() {
     }
   );
 
+  // Messages
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
 
     if (!msg?.message) return;
+
+    const jid = msg.key.remoteJid;
 
     const text =
       msg.message.conversation ||
@@ -106,14 +108,24 @@ async function startBot() {
 
     const command = text.trim().toLowerCase();
 
+    // ==============================
+    // PING
+    // ==============================
+
     if (command === "ping") {
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: "🏓 Pong!\n\n⚡ JOSH-X ULTRA is online!"
+      await sock.sendMessage(jid, {
+        text:
+          "🏓 *PONG!*\n\n" +
+          "⚡ JOSH-X ULTRA is online!"
       });
     }
 
+    // ==============================
+    // ALIVE
+    // ==============================
+
     if (command === "alive") {
-      await sock.sendMessage(msg.key.remoteJid, {
+      await sock.sendMessage(jid, {
         text:
           "🤖 *JOSH-X ULTRA*\n\n" +
           "✅ Bot is alive\n" +
@@ -122,15 +134,14 @@ async function startBot() {
       });
     }
 
+    // ==============================
+    // MENU
+    // ==============================
+
     if (command === "menu") {
-      await sock.sendMessage(msg.key.remoteJid, {
+      await sock.sendMessage(jid, {
         text:
-          ┃
-┃ 😈 BUG MENU
-┃ • bug
-┃ • bugtest
-┃ • stress
-┃ • Joshua         "╭━━〔 🤖 JOSH-X ULTRA 〕━━╮\n" +
+          "╭━━〔 🤖 JOSH-X ULTRA 〕━━╮\n" +
           "┃\n" +
           "┃ ⚡ GENERAL\n" +
           "┃ • ping\n" +
@@ -138,52 +149,90 @@ async function startBot() {
           "┃ • menu\n" +
           "┃ • owner\n" +
           "┃\n" +
+          "┃ 😈 BUG MENU\n" +
+          "┃ • bug\n" +
+          "┃ • bugtest\n" +
+          "┃ • stress\n" +
+          "┃ • testmsg\n" +
+          "┃\n" +
           "┃ 🚀 More coming soon...\n" +
           "╰━━━━━━━━━━━━━━━━━━━━╯"
       });
     }
 
+    // ==============================
+    // OWNER
+    // ==============================
+
     if (command === "owner") {
-      await sock.sendMessage(msg.key.remoteJid, {
+      await sock.sendMessage(jid, {
         text:
           "👑 *JOSH-X ULTRA OWNER*\n\n" +
-          "Joshua
-          if (command === "bug") {
-  await sock.sendMessage(msg.key.remoteJid, {
-    text:
-      "😈 *JOSH-X ULTRA BUG TEST*\n\n" +
-      "🐞 Testing mode activated!\n" +
-      "🧪 Running harmless diagnostics...\n" +
-      "✅ Test completed successfully."
-  });
-}
+          "Joshua"
+      });
+    }
 
-if (command === "bugtest") {
-  await sock.sendMessage(msg.key.remoteJid, {
-    text:
-      "🐞 *BUG TEST*\n\n" +
-      "⚡ Message handling: OK\n" +
-      "🤖 Bot response: OK\n" +
-      "🌐 Connection: OK\n" +
-      "✅ All tests passed!"
-  });
-}
+    // ==============================
+    // BUG MENU
+    // Safe testing only
+    // ==============================
 
-if (command === "stress") {
-  await sock.sendMessage(msg.key.remoteJid, {
-    text:
-      "🧪 *STRESS TEST*\n\n" +
-      "Testing bot performance safely...\n" +
-      "✅ Test complete."
-  });
-}
+    if (command === "bug") {
+      await sock.sendMessage(jid, {
+        text:
+          "😈 *JOSH-X ULTRA BUG TEST*\n\n" +
+          "🐞 Testing mode activated!\n" +
+          "🧪 Running harmless diagnostics...\n" +
+          "⚡ Message system: OK\n" +
+          "🤖 Bot response: OK\n" +
+          "🌐 Connection: OK\n" +
+          "✅ Test completed!"
+      });
+    }
 
-if (command === "testmsg") {
-  await sock.sendMessage(msg.key.remoteJid, {
-    text: "😈 JOSH-X ULTRA TEST MESSAGE 🐞⚡"
-  });
-}
-     });
+    // ==============================
+    // BUG TEST
+    // ==============================
+
+    if (command === "bugtest") {
+      await sock.sendMessage(jid, {
+        text:
+          "🐞 *BUG TEST*\n\n" +
+          "⚡ Message handling: OK\n" +
+          "🤖 Bot response: OK\n" +
+          "🌐 Connection: OK\n" +
+          "📡 WhatsApp session: Active\n" +
+          "✅ All tests passed!"
+      });
+    }
+
+    // ==============================
+    // STRESS TEST
+    // ==============================
+
+    if (command === "stress") {
+      await sock.sendMessage(jid, {
+        text:
+          "🧪 *STRESS TEST*\n\n" +
+          "Testing JOSH-X ULTRA performance...\n\n" +
+          "⚡ Command system: OK\n" +
+          "📨 Message system: OK\n" +
+          "🔄 Event system: OK\n\n" +
+          "✅ Safe stress test completed!"
+      });
+    }
+
+    // ==============================
+    // TEST MESSAGE
+    // ==============================
+
+    if (command === "testmsg") {
+      await sock.sendMessage(jid, {
+        text:
+          "😈 *JOSH-X ULTRA*\n\n" +
+          "🐞 TEST MESSAGE\n" +
+          "⚡ System is responding correctly!"
+      });
     }
   });
 }

@@ -8,12 +8,20 @@ const P = require("pino");
 const http = require("http");
 
 // ==========================================
-// 🌐 RENDER WEB SERVER
+// 🌐 RENDER WEB SERVER + HEALTH CHECK
 // ==========================================
 
 const PORT = process.env.PORT || 10000;
 
 http.createServer((req, res) => {
+  if (req.url === "/health") {
+    res.writeHead(200, {
+      "Content-Type": "text/plain"
+    });
+
+    return res.end("OK");
+  }
+
   res.writeHead(200, {
     "Content-Type": "text/plain"
   });
@@ -24,7 +32,7 @@ http.createServer((req, res) => {
 });
 
 // ==========================================
-// 😈 ROAST BATTLE ENGINE
+// 😈 ROAST ENGINE
 // ==========================================
 
 const roastReplies = [
@@ -55,16 +63,59 @@ const jokes = [
   "😭 My Wi-Fi and I have a complicated relationship."
 ];
 
+const quotes = [
+  "💫 Small progress is still progress.",
+  "🔥 Keep learning. Keep building.",
+  "🚀 Every expert started as a beginner.",
+  "💡 Problems are part of the learning process.",
+  "⚡ Build something today that makes tomorrow easier."
+];
+
+const facts = [
+  "🧠 A group of flamingos is called a flamboyance.",
+  "🌍 Earth is the only known planet with stable liquid water on its surface.",
+  "🐙 Octopuses have three hearts.",
+  "☀️ Sunlight takes about 8 minutes to reach Earth.",
+  "🦒 Giraffes have the same number of neck vertebrae as humans: seven."
+];
+
+const truths = [
+  "👀 What's one thing you are secretly really good at?",
+  "😂 What's the funniest thing you've ever done?",
+  "😎 Who was your first crush?",
+  "🤔 What's one thing you want to learn?",
+  "🔥 What's the biggest mistake you've learned from?"
+];
+
+const dares = [
+  "😂 Send the funniest emoji combination you can think of.",
+  "🔥 Change your profile picture for 5 minutes.",
+  "🤣 Send 'I am the legend' to the group.",
+  "😎 Say something nice about the person above you.",
+  "💀 Send your last-used emoji three times."
+];
+
+function randomItem(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
 function getRoast() {
-  return roastReplies[
-    Math.floor(Math.random() * roastReplies.length)
-  ];
+  return randomItem(roastReplies);
 }
 
 function getJoke() {
-  return jokes[
-    Math.floor(Math.random() * jokes.length)
-  ];
+  return randomItem(jokes);
+}
+
+function getRuntime() {
+  const seconds = Math.floor(process.uptime());
+
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  return `${days}d ${hours}h ${minutes}m ${secs}s`;
 }
 
 // ==========================================
@@ -93,7 +144,6 @@ async function startBot() {
     "connection.update",
     async ({ connection, lastDisconnect, qr }) => {
 
-      // WhatsApp pairing
       if (
         qr &&
         !state.creds.registered &&
@@ -135,7 +185,10 @@ async function startBot() {
         }
       }
 
-      // Bot online
+      // ======================================
+      // 🟢 BOT ONLINE
+      // ======================================
+
       if (connection === "open") {
         console.log("================================");
         console.log("🤖 JOSH-X ULTRA");
@@ -144,7 +197,10 @@ async function startBot() {
         console.log("================================");
       }
 
-      // Connection closed
+      // ======================================
+      // 🔄 CONNECTION CLOSED
+      // ======================================
+
       if (connection === "close") {
 
         const shouldReconnect =
@@ -189,435 +245,31 @@ async function startBot() {
 
         const jid = msg.key.remoteJid;
 
+        if (!jid) return;
+
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
           "";
 
-        const command =
-          text.trim().toLowerCase();
+        const cleanText = text.trim();
 
-        if (!command) return;
+        if (!cleanText) return;
+
+        const parts = cleanText.split(/\s+/);
+
+        const command =
+          parts[0].toLowerCase();
+
+        const args =
+          parts.slice(1).join(" ").trim();
 
         // ==================================
         // 🏓 PING
         // ==================================
 
         if (command === "ping") {
-          await sock.sendMessage(jid, {
-            text:
-              "🏓 *PONG!*\n\n" +
-              "⚡ JOSH-X ULTRA is online!"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // ❤️ ALIVE
-        // ==================================
-
-        if (command === "alive") {
-          await sock.sendMessage(jid, {
-            text:
-              "🤖 *JOSH-X ULTRA*\n\n" +
-              "✅ Bot is alive\n" +
-              "⚡ Status: Online\n" +
-              "🚀 Version: 1.0.0"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // ⏱️ RUNTIME
-        // ==================================
-
-        if (command === "runtime") {
-
-          const seconds =
-            process.uptime();
-
-          const days =
-            Math.floor(seconds / 86400);
-
-          const hours =
-            Math.floor(
-              (seconds % 86400) / 3600
-            );
-
-          const minutes =
-            Math.floor(
-              (seconds % 3600) / 60
-            );
-
-          const secs =
-            Math.floor(seconds % 60);
 
           await sock.sendMessage(jid, {
             text:
-              "⏱️ *JOSH-X ULTRA RUNTIME*\n\n" +
-              `🗓️ ${days}d ${hours}h ${minutes}m ${secs}s`
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 👑 OWNER
-        // ==================================
-
-        if (command === "owner") {
-          await sock.sendMessage(jid, {
-            text:
-              "👑 *JOSH-X ULTRA OWNER*\n\n" +
-              "Joshua"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // ℹ️ ABOUT
-        // ==================================
-
-        if (command === "about") {
-          await sock.sendMessage(jid, {
-            text:
-              "🤖 *JOSH-X ULTRA*\n\n" +
-              "⚡ WhatsApp Automation Bot\n" +
-              "🚀 Version: 1.0.0\n" +
-              "🧩 Command System: Active\n" +
-              "☁️ Hosted on Render\n\n" +
-              "Made by Joshua ❤️"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 📋 MENU
-        // ==================================
-
-        if (command === "menu") {
-
-          await sock.sendMessage(jid, {
-            text:
-              "╭━━〔 🤖 JOSH-X ULTRA 〕━━╮\n" +
-              "┃\n" +
-              "┃ ⚡ GENERAL\n" +
-              "┃ • ping\n" +
-              "┃ • alive\n" +
-              "┃ • runtime\n" +
-              "┃ • owner\n" +
-              "┃ • about\n" +
-              "┃\n" +
-              "┃ 👥 GROUP\n" +
-              "┃ • groupinfo\n" +
-              "┃ • admins\n" +
-              "┃ • tagall\n" +
-              "┃\n" +
-              "┃ 🛠️ TOOLS\n" +
-              "┃ • testmsg\n" +
-              "┃ • joke\n" +
-              "┃\n" +
-              "┃ 🤖 CHAT / ROAST\n" +
-              "┃ • roast\n" +
-              "┃ • comeback\n" +
-              "┃ • roastbattle\n" +
-              "┃\n" +
-              "┃ 😈 BUG / TEST\n" +
-              "┃ • bug\n" +
-              "┃ • bugtest\n" +
-              "┃ • stress\n" +
-              "┃\n" +
-              "┃ 🚀 JOSH-X ULTRA\n" +
-              "╰━━━━━━━━━━━━━━━━━━━━╯"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 😂 JOKE
-        // ==================================
-
-        if (command === "joke") {
-
-          await sock.sendMessage(jid, {
-            text:
-              "😂 *JOSH-X JOKE*\n\n" +
-              getJoke()
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 😈 ROAST
-        // ==================================
-
-        if (
-          command === "roast" ||
-          command.startsWith("roast ")
-        ) {
-
-          await sock.sendMessage(jid, {
-            text:
-              "😈 *JOSH-X ROAST MODE*\n\n" +
-              getRoast()
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 🔥 COMEBACK
-        // ==================================
-
-        if (
-          command === "comeback" ||
-          command.startsWith("comeback ")
-        ) {
-
-          await sock.sendMessage(jid, {
-            text:
-              "🔥 *JOSH-X COMEBACK*\n\n" +
-              getRoast()
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 🥊 ROAST BATTLE
-        // ==================================
-
-        if (command === "roastbattle") {
-
-          await sock.sendMessage(jid, {
-            text:
-              "🥊 *JOSH-X ROAST BATTLE*\n\n" +
-              "😈 Battle mode activated!\n\n" +
-              "Send me a roast and I'll fire back. 🔥\n\n" +
-              "Use *roast* or *comeback* for another round."
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 🐞 BUG
-        // ==================================
-
-        if (command === "bug") {
-
-          await sock.sendMessage(jid, {
-            text:
-              "😈 *JOSH-X BUG TEST*\n\n" +
-              "🐞 Diagnostic mode activated!\n" +
-              "⚡ Message system: OK\n" +
-              "🤖 Bot engine: OK\n" +
-              "🌐 Connection: OK\n" +
-              "✅ Test completed!"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 🧪 BUG TEST
-        // ==================================
-
-        if (command === "bugtest") {
-
-          await sock.sendMessage(jid, {
-            text:
-              "🐞 *BUG TEST*\n\n" +
-              "📨 Message handling: OK\n" +
-              "⚡ Command handler: OK\n" +
-              "🔄 Event system: OK\n" +
-              "🤖 Bot response: OK\n\n" +
-              "✅ All tests passed!"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 🧪 STRESS TEST
-        // ==================================
-
-        if (command === "stress") {
-
-          await sock.sendMessage(jid, {
-            text:
-              "🧪 *STRESS TEST*\n\n" +
-              "Testing JOSH-X ULTRA safely...\n\n" +
-              "⚡ Command system: OK\n" +
-              "📨 Message system: OK\n" +
-              "🔄 Event system: OK\n" +
-              "🤖 Bot engine: OK\n\n" +
-              "✅ Test completed!"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 📨 TEST MESSAGE
-        // ==================================
-
-        if (command === "testmsg") {
-
-          await sock.sendMessage(jid, {
-            text:
-              "😈 *JOSH-X ULTRA*\n\n" +
-              "🐞 TEST MESSAGE\n" +
-              "⚡ System responding correctly!"
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 👥 GROUP INFO
-        // ==================================
-
-        if (command === "groupinfo") {
-
-          if (!jid.endsWith("@g.us")) {
-
-            await sock.sendMessage(jid, {
-              text:
-                "❌ This command only works in groups."
-            });
-
-            return;
-          }
-
-          const metadata =
-            await sock.groupMetadata(jid);
-
-          await sock.sendMessage(jid, {
-            text:
-              "👥 *GROUP INFO*\n\n" +
-              `📛 Name: ${metadata.subject}\n` +
-              `👤 Members: ${metadata.participants.length}\n` +
-              `🆔 ID: ${jid}`
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 👑 ADMINS
-        // ==================================
-
-        if (command === "admins") {
-
-          if (!jid.endsWith("@g.us")) {
-
-            await sock.sendMessage(jid, {
-              text:
-                "❌ This command only works in groups."
-            });
-
-            return;
-          }
-
-          const metadata =
-            await sock.groupMetadata(jid);
-
-          const admins =
-            metadata.participants.filter(
-              member =>
-                member.admin === "admin" ||
-                member.admin === "superadmin"
-            );
-
-          let message =
-            "👑 *GROUP ADMINS*\n\n";
-
-          admins.forEach(
-            (admin, index) => {
-              message +=
-                `${index + 1}. @${admin.id.split("@")[0]}\n`;
-            }
-          );
-
-          await sock.sendMessage(jid, {
-            text: message,
-            mentions:
-              admins.map(
-                admin => admin.id
-              )
-          });
-
-          return;
-        }
-
-        // ==================================
-        // 📢 TAG ALL
-        // ==================================
-
-        if (command === "tagall") {
-
-          if (!jid.endsWith("@g.us")) {
-
-            await sock.sendMessage(jid, {
-              text:
-                "❌ This command only works in groups."
-            });
-
-            return;
-          }
-
-          const metadata =
-            await sock.groupMetadata(jid);
-
-          let message =
-            "📢 *JOSH-X ULTRA TAG ALL*\n\n";
-
-          const mentions =
-            metadata.participants.map(
-              member => member.id
-            );
-
-          metadata.participants.forEach(
-            (member, index) => {
-              message +=
-                `${index + 1}. @${member.id.split("@")[0]}\n`;
-            }
-          );
-
-          await sock.sendMessage(jid, {
-            text: message,
-            mentions
-          });
-
-          return;
-        }
-
-      } catch (error) {
-
-        console.error(
-          "❌ Command error:",
-          error
-        );
-
-      }
-    }
-  );
-}
-
-// ==========================================
-// 🚀 START JOSH-X ULTRA
-// ==========================================
-
-startBot().catch(error => {
-  console.error(
-    "❌ Bot failed to start:",
-    error
-  );
-});
+             

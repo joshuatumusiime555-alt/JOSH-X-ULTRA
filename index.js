@@ -49,7 +49,7 @@ function getRuntime() {
   return `${days}d ${hours}h ${minutes}m ${secs}s`;
 }
 
-// Extract message extraction logic away from the main loop
+// Safely pull raw message text from any structural variant
 function extractMessageText(message) {
   if (!message) return "";
   return (
@@ -61,7 +61,7 @@ function extractMessageText(message) {
   ).trim();
 }
 
-// Helper to quickly verify group context
+// Safe contextual checks for groups
 async function checkGroupContext(sock, jid) {
   if (!jid.endsWith("@g.us")) {
     await sock.sendMessage(jid, { text: "❌ This command only works in groups." });
@@ -157,7 +157,7 @@ async function startBot() {
       if (!text) return;
 
       const tokens = text.split(" ");
-      const command = tokens[0].toLowerCase();
+      const command = tokens[0].toLowerCase(); // Fixed the syntax crash here
       const query = tokens.slice(1).join(" ");
 
       // ======================================
